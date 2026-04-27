@@ -1,0 +1,51 @@
+<%- include("partials/header") %>
+
+<div class="card card-shadow">
+  <div class="card-body">
+    <h1 class="mb-4">Update Author</h1>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form action="/updateAuthor" method="POST">
+      <input type="hidden" name="authorId" value="<%= authorInfo.authorId %>">
+
+      <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input type="text" name="firstName" class="form-control" value="<%= authorInfo.firstName %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="lastName" class="form-control" value="<%= authorInfo.lastName %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Date of Birth</label>
+        <input type="date" name="dob" class="form-control" value="<%= authorInfo.ISOdob %>" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Sex</label><br>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="sex" value="M" <%= authorInfo.sex === 'M' ? 'checked' : '' %>>
+          <label class="form-check-label">M</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="sex" value="F" <%= authorInfo.sex === 'F' ? 'checked' : '' %>>
+          <label class="form-check-label">F</label>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Biography</label>
+        <textarea name="bio" class="form-control" required><%= authorInfo.biography %></textarea>
+      </div>
+
+      <button class="btn btn-warning">Update Author</button>
+    </form>
+  </div>
+</div>
+
+<%- include("partials/footer") %>

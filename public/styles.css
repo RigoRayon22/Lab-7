@@ -1,0 +1,21 @@
+body {
+  background-color: #f8f9fa;
+}
+
+.container-box {
+  max-width: 1000px;
+  margin: 40px auto;
+}
+
+.card-shadow {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+textarea {
+  min-height: 120px;
+}
+
+.table td,
+.table th {
+  vertical-align: middle;
+}

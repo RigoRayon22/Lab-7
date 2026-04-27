@@ -1,0 +1,49 @@
+<%- include("partials/header") %>
+
+<div class="card card-shadow">
+  <div class="card-body">
+    <h1 class="mb-4">Add New Author</h1>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form action="/addAuthor" method="POST">
+      <div class="mb-3">
+        <label class="form-label">First Name</label>
+        <input type="text" name="firstName" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Last Name</label>
+        <input type="text" name="lastName" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Date of Birth</label>
+        <input type="date" name="dob" class="form-control" required>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Sex</label><br>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="sex" value="M" required>
+          <label class="form-check-label">M</label>
+        </div>
+        <div class="form-check form-check-inline">
+          <input class="form-check-input" type="radio" name="sex" value="F" required>
+          <label class="form-check-label">F</label>
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Biography</label>
+        <textarea name="bio" class="form-control" required></textarea>
+      </div>
+
+      <button class="btn btn-primary">Add Author</button>
+    </form>
+  </div>
+</div>
+
+<%- include("partials/footer") %>

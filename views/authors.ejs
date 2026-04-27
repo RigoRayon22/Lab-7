@@ -1,0 +1,40 @@
+<%- include("partials/header") %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1>All Authors</h1>
+  <a href="/addAuthor" class="btn btn-primary">Add Author</a>
+</div>
+
+<div class="card card-shadow">
+  <div class="card-body">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>DOB</th>
+          <th>Sex</th>
+          <th>Biography</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% authors.forEach(author => { %>
+          <tr>
+            <td><%= author.firstName %> <%= author.lastName %></td>
+            <td><%= author.dob ? new Date(author.dob).toISOString().split("T")[0] : "" %></td>
+            <td><%= author.sex %></td>
+            <td><%= author.biography %></td>
+            <td>
+              <a href="/updateAuthor?authorId=<%= author.authorId %>" class="btn btn-sm btn-warning">Edit</a>
+              <a href="/deleteAuthor?authorId=<%= author.authorId %>"
+                 class="btn btn-sm btn-danger"
+                 onclick="return confirm('Delete this author and their quotes?')">Delete</a>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<%- include("partials/footer") %>

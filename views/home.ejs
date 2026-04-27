@@ -1,0 +1,25 @@
+<%- include("partials/header") %>
+
+<div class="card card-shadow">
+  <div class="card-body">
+    <h1 class="mb-3">Admin Section</h1>
+    <p class="lead">Welcome to the Quotes Admin dashboard.</p>
+
+    <div class="row g-3 mt-3">
+      <div class="col-md-3">
+        <a href="/addAuthor" class="btn btn-primary w-100">Add Author</a>
+      </div>
+      <div class="col-md-3">
+        <a href="/addQuote" class="btn btn-success w-100">Add Quote</a>
+      </div>
+      <div class="col-md-3">
+        <a href="/authors" class="btn btn-warning w-100">View Authors</a>
+      </div>
+      <div class="col-md-3">
+        <a href="/quotes" class="btn btn-info w-100">View Quotes</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<%- include("partials/footer") %>

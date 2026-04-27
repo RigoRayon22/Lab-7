@@ -1,0 +1,16 @@
+{
+  "name": "quotesadmin",
+  "version": "1.0.0",
+  "description": "Quotes Admin App",
+  "main": "app.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "express-session": "^1.19.0",
+    "mysql2": "^3.14.1"
+  }
+}

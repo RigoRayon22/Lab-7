@@ -1,0 +1,48 @@
+<%- include("partials/header") %>
+
+<div class="card card-shadow">
+  <div class="card-body">
+    <h1 class="mb-4">Update Quote</h1>
+
+    <% if (error) { %>
+      <div class="alert alert-danger"><%= error %></div>
+    <% } %>
+
+    <form action="/updateQuote" method="POST">
+      <input type="hidden" name="quoteId" value="<%= quoteInfo.quoteId %>">
+
+      <div class="mb-3">
+        <label class="form-label">Quote</label>
+        <textarea name="quote" class="form-control" required><%= quoteInfo.quote %></textarea>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select" required>
+          <option value="">Select Category</option>
+          <% categoryList.forEach(c => { %>
+            <option value="<%= c.category %>" <%= quoteInfo.category === c.category ? 'selected' : '' %>>
+              <%= c.category %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label">Author</label>
+        <select name="authorId" class="form-select" required>
+          <option value="">Select Author</option>
+          <% authorList.forEach(author => { %>
+            <option value="<%= author.authorId %>" <%= Number(quoteInfo.authorId) === Number(author.authorId) ? 'selected' : '' %>>
+              <%= author.firstName %> <%= author.lastName %>
+            </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <button class="btn btn-warning">Update Quote</button>
+    </form>
+  </div>
+</div>
+
+<%- include("partials/footer") %>
