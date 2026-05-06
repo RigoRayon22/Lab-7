@@ -3,6 +3,7 @@ const mysql = require("mysql2/promise");
 const session = require("express-session");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
 
 app.set("view engine", "ejs");
 app.use(express.static("public"));
@@ -10,52 +11,48 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    secret: "quotes_admin_secret_key",
+    secret: process.env.SESSION_SECRET || "quotes_admin_secret_key",
     resave: false,
     saveUninitialized: false
   })
 );
 
-// database connection
 const pool = mysql.createPool({
-  host: "sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
-  user: "w9c7lwn8um1o99yj",
-  password: "u3rw8lbcasz2h307",
-  database: "pyn5h5u7iu857dd2",
+  host: process.env.DB_HOST || "sh4ob67ph9l80v61.cbetxkdyhwsb.us-east-1.rds.amazonaws.com",
+  user: process.env.DB_USER || "w9c7lwn8um1o99yj",
+  password: process.env.DB_PASSWORD || "u3rw8lbcasz2h307",
+  database: process.env.DB_NAME || "pyn5h5u7iu857dd2",
   connectionLimit: 10,
   waitForConnections: true
 });
 
-// auth middleware
 function isAuthenticated(req, res, next) {
   if (req.session.user) return next();
   res.redirect("/login");
 }
 
-// make session available to views
 app.use((req, res, next) => {
   res.locals.user = req.session.user || null;
   next();
 });
 
-// root
 app.get("/", (req, res) => {
   if (req.session.user) return res.redirect("/home");
   res.redirect("/login");
 });
 
-// login page
 app.get("/login", (req, res) => {
   res.render("login", { error: null });
 });
 
-// login action
 app.post("/login", async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    const sql = `SELECT * FROM admins WHERE username = ? AND password = ?`;
-    const [rows] = await pool.query(sql, [username, password]);
+    const [rows] = await pool.query(
+      "SELECT * FROM admins WHERE username = ? AND password = ?",
+      [username, password]
+    );
 
     if (rows.length > 0) {
       req.session.user = {
@@ -67,37 +64,33 @@ app.post("/login", async (req, res) => {
 
     res.render("login", { error: "Invalid username or password." });
   } catch (err) {
-    console.error(err);
+    console.error("LOGIN ERROR:", err);
     res.render("login", { error: err.message });
   }
 });
 
-// logout
 app.get("/logout", (req, res) => {
   req.session.destroy(() => res.redirect("/login"));
 });
 
-// home
 app.get("/home", isAuthenticated, (req, res) => {
   res.render("home");
 });
 
-// authors
 app.get("/authors", isAuthenticated, async (req, res) => {
   const [authors] = await pool.query(`
     SELECT authorId, firstName, lastName, dob, sex, biography
     FROM authors
     ORDER BY lastName, firstName
   `);
+
   res.render("authors", { authors });
 });
 
-// add author form
 app.get("/addAuthor", isAuthenticated, (req, res) => {
   res.render("addAuthor", { error: null });
 });
 
-// add author
 app.post("/addAuthor", isAuthenticated, async (req, res) => {
   try {
     const { firstName, lastName, dob, sex, bio } = req.body;
@@ -119,15 +112,15 @@ app.post("/addAuthor", isAuthenticated, async (req, res) => {
   }
 });
 
-// update author form
 app.get("/updateAuthor", isAuthenticated, async (req, res) => {
   const authorId = req.query.authorId;
 
   const [rows] = await pool.query(
     `SELECT authorId, firstName, lastName,
-            DATE_FORMAT(dob,'%Y-%m-%d') AS ISOdob,
+            DATE_FORMAT(dob, '%Y-%m-%d') AS ISOdob,
             sex, biography
-     FROM authors WHERE authorId = ?`,
+     FROM authors
+     WHERE authorId = ?`,
     [authorId]
   );
 
@@ -139,15 +132,14 @@ app.get("/updateAuthor", isAuthenticated, async (req, res) => {
   });
 });
 
-// update author
 app.post("/updateAuthor", isAuthenticated, async (req, res) => {
   try {
     const { authorId, firstName, lastName, dob, sex, bio } = req.body;
 
     await pool.query(
       `UPDATE authors
-       SET firstName=?, lastName=?, dob=?, sex=?, biography=?
-       WHERE authorId=?`,
+       SET firstName = ?, lastName = ?, dob = ?, sex = ?, biography = ?
+       WHERE authorId = ?`,
       [firstName, lastName, dob, sex, bio, authorId]
     );
 
@@ -158,17 +150,20 @@ app.post("/updateAuthor", isAuthenticated, async (req, res) => {
   }
 });
 
-// delete author
 app.get("/deleteAuthor", isAuthenticated, async (req, res) => {
-  const authorId = req.query.authorId;
+  try {
+    const authorId = req.query.authorId;
 
-  await pool.query(`DELETE FROM quotes WHERE authorId=?`, [authorId]);
-  await pool.query(`DELETE FROM authors WHERE authorId=?`, [authorId]);
+    await pool.query("DELETE FROM quotes WHERE authorId = ?", [authorId]);
+    await pool.query("DELETE FROM authors WHERE authorId = ?", [authorId]);
 
-  res.redirect("/authors");
+    res.redirect("/authors");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/authors");
+  }
 });
 
-// quotes
 app.get("/quotes", isAuthenticated, async (req, res) => {
   const [quotes] = await pool.query(`
     SELECT q.quoteId, q.quote, q.category, q.authorId,
@@ -177,17 +172,22 @@ app.get("/quotes", isAuthenticated, async (req, res) => {
     JOIN authors a ON q.authorId = a.authorId
     ORDER BY q.quote
   `);
+
   res.render("quotes", { quotes });
 });
 
-// add quote form
 app.get("/addQuote", isAuthenticated, async (req, res) => {
   const [authorList] = await pool.query(`
-    SELECT authorId, firstName, lastName FROM authors
+    SELECT authorId, firstName, lastName
+    FROM authors
+    ORDER BY lastName, firstName
   `);
 
   const [categoryList] = await pool.query(`
-    SELECT DISTINCT category FROM quotes WHERE category <> ''
+    SELECT DISTINCT category
+    FROM quotes
+    WHERE category IS NOT NULL AND category <> ''
+    ORDER BY category
   `);
 
   res.render("addQuote", {
@@ -197,67 +197,93 @@ app.get("/addQuote", isAuthenticated, async (req, res) => {
   });
 });
 
-// add quote
 app.post("/addQuote", isAuthenticated, async (req, res) => {
-  const { quote, category, authorId } = req.body;
+  try {
+    const { quote, category, authorId } = req.body;
 
-  await pool.query(
-    `INSERT INTO quotes (quote, category, authorId)
-     VALUES (?, ?, ?)`,
-    [quote, category, authorId]
-  );
+    if (!quote || !category || !authorId) {
+      return res.redirect("/addQuote");
+    }
 
-  res.redirect("/quotes");
+    await pool.query(
+      `INSERT INTO quotes (quote, category, authorId)
+       VALUES (?, ?, ?)`,
+      [quote, category, authorId]
+    );
+
+    res.redirect("/quotes");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/quotes");
+  }
 });
 
-// update quote form
 app.get("/updateQuote", isAuthenticated, async (req, res) => {
-  const quoteId = req.query.quoteId;
+  try {
+    const quoteId = req.query.quoteId;
 
-  const [quoteRows] = await pool.query(
-    `SELECT * FROM quotes WHERE quoteId=?`,
-    [quoteId]
-  );
+    const [quoteRows] = await pool.query(
+      "SELECT * FROM quotes WHERE quoteId = ?",
+      [quoteId]
+    );
 
-  const [authorList] = await pool.query(
-    `SELECT authorId, firstName, lastName FROM authors`
-  );
+    if (quoteRows.length === 0) return res.redirect("/quotes");
 
-  const [categoryList] = await pool.query(
-    `SELECT DISTINCT category FROM quotes WHERE category <> ''`
-  );
+    const [authorList] = await pool.query(`
+      SELECT authorId, firstName, lastName
+      FROM authors
+      ORDER BY lastName, firstName
+    `);
 
-  res.render("updateQuote", {
-    quoteInfo: quoteRows[0],
-    authorList,
-    categoryList,
-    error: null
-  });
+    const [categoryList] = await pool.query(`
+      SELECT DISTINCT category
+      FROM quotes
+      WHERE category IS NOT NULL AND category <> ''
+      ORDER BY category
+    `);
+
+    res.render("updateQuote", {
+      quoteInfo: quoteRows[0],
+      authorList,
+      categoryList,
+      error: null
+    });
+  } catch (err) {
+    console.error(err);
+    res.redirect("/quotes");
+  }
 });
 
-// update quote
 app.post("/updateQuote", isAuthenticated, async (req, res) => {
-  const { quoteId, quote, category, authorId } = req.body;
+  try {
+    const { quoteId, quote, category, authorId } = req.body;
 
-  await pool.query(
-    `UPDATE quotes
-     SET quote=?, category=?, authorId=?
-     WHERE quoteId=?`,
-    [quote, category, authorId, quoteId]
-  );
+    await pool.query(
+      `UPDATE quotes
+       SET quote = ?, category = ?, authorId = ?
+       WHERE quoteId = ?`,
+      [quote, category, authorId, quoteId]
+    );
 
-  res.redirect("/quotes");
+    res.redirect("/quotes");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/quotes");
+  }
 });
 
-// delete quote
 app.get("/deleteQuote", isAuthenticated, async (req, res) => {
-  const quoteId = req.query.quoteId;
+  try {
+    const quoteId = req.query.quoteId;
 
-  await pool.query(`DELETE FROM quotes WHERE quoteId=?`, [quoteId]);
-  res.redirect("/quotes");
+    await pool.query("DELETE FROM quotes WHERE quoteId = ?", [quoteId]);
+
+    res.redirect("/quotes");
+  } catch (err) {
+    console.error(err);
+    res.redirect("/quotes");
+  }
 });
-
-const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
